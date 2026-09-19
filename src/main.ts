@@ -12,6 +12,7 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
   app.setGlobalPrefix('api/v1');
+  app.useGlobalPipes();
 
   await app.listen(process.env.PORT ?? 3000);
 }

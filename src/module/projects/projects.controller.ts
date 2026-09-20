@@ -20,7 +20,7 @@ import {
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
-  @Get()
+  @Get(':id')
   getById(@Param('id', ParseIntPipe) id: number) {
     return this.projectsService.getById(id);
   }

@@ -2,17 +2,20 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
+  ForeignKey,
+  ManyToOne,
   PrimaryColumn,
-  Relation,
+  type Relation,
   UpdateDateColumn,
 } from 'typeorm';
-import { Layer } from './layers.entities.js';
-
+import { Project } from './projects.entities.js';
 @Entity()
-export class Project {
+export class Layer {
   @PrimaryColumn()
   public id: number;
+
+  @Column()
+  public position: number;
 
   @Column()
   public name: string;
@@ -29,6 +32,6 @@ export class Project {
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   public createdAt: Date;
 
-  @OneToMany(() => Layer, (layer) => layer.project)
-  public layers: Relation<Layer>[];
+  @ManyToOne(() => Project, (project) => project.layers)
+  project: Relation<Project>;
 }

@@ -42,8 +42,8 @@ export class LayersService {
     };
   }
 
-  create(dto: CreateLayerDto): Layer {
-    return this.layerRepository.create(dto);
+  async create(dto: CreateLayerDto): Promise<Layer> {
+    return await this.layerRepository.save(this.layerRepository.create(dto));
   }
 
   async update(id: number, dto: UpdateLayerDto): Promise<Layer> {

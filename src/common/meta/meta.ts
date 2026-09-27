@@ -1,4 +1,15 @@
-import { IsEnum, IsIn, IsInt, IsOptional, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 
 export class MetaDto {
   pageSize: number;
@@ -21,26 +32,46 @@ export enum SortOrder {
 const PAGE_NUMBER_DEFAULT = 1;
 const PAGE_SIZE_DEFAULT = 10;
 
-export function DefaultQueryParamsDto<T extends object>(
-  sortFields: readonly (keyof T)[],
-) {
+// TODO: add ?include= and ?fields= Q params
+export function DefaultQueryParamsDto<
+  const sortFields extends string,
+  const searchFields extends string,
+>(opts: {
+  sortFields: readonly sortFields[];
+  searchFields: readonly searchFields[];
+  defaultSortBy: NoInfer<sortFields>;
+}) {
   class QueryParamsDto {
     @IsOptional()
-    @IsIn(sortFields)
-    sortBy: keyof T = 'createdAt' as keyof T;
+    @IsIn(opts.searchFields)
+    searchField?: keyof searchFields;
 
     @IsOptional()
-    @IsIn([SortOrder.ASC, SortOrder.DESC])
+    @IsString()
+    @MinLength(3)
+    @MaxLength(100)
+    search?: string;
+
+    @IsOptional()
+    @IsIn(opts.sortFields)
+    sortBy: sortFields = opts.defaultSortBy;
+
+    @IsOptional()
+    @Transform(({ value }) => String(value).toUpperCase())
+    @IsEnum(SortOrder)
     sortOrder: SortOrder = SortOrder.DESC;
 
     @IsOptional()
+    @Type(() => Number)
     @IsInt()
     @Min(1)
     page: number = PAGE_NUMBER_DEFAULT;
 
     @IsOptional()
+    @Type(() => Number)
     @IsInt()
     @Min(1)
+    @Max(100)
     pageSize: number = PAGE_SIZE_DEFAULT;
   }
 

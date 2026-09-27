@@ -5,13 +5,14 @@ import {
   ForeignKey,
   ManyToOne,
   PrimaryColumn,
+  PrimaryGeneratedColumn,
   type Relation,
   UpdateDateColumn,
 } from 'typeorm';
 import { Project } from './projects.entities.js';
 @Entity()
 export class Layer {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   public id: number;
 
   @Column()

@@ -4,6 +4,7 @@ import {
   Entity,
   OneToMany,
   PrimaryColumn,
+  PrimaryGeneratedColumn,
   Relation,
   UpdateDateColumn,
 } from 'typeorm';
@@ -11,7 +12,7 @@ import { Layer } from './layers.entities.js';
 
 @Entity()
 export class Project {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   public id: number;
 
   @Column()

@@ -1,10 +1,16 @@
 import { IntersectionType, OmitType, PartialType } from '@nestjs/swagger';
 import { DefaultQueryParamsDto } from '@/common/meta/meta.js';
-import { IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
-import { TransformToStringArray } from '@/common/utils/transform-to-string-array.js';
+import {
+  IsDateString,
+  isInt,
+  IsInt,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { TransformToNumberArray } from '@/common/utils/transform-to-number-array.js';
+import { TransformToStringArray } from '@/common/utils/transform-to-string-array.js';
 
-export class ProjectDto {
+export class LayerDto {
   @IsInt()
   public id: number;
 
@@ -14,6 +20,9 @@ export class ProjectDto {
   @IsOptional()
   @IsString()
   public description?: string;
+
+  @IsInt()
+  public position: number;
 
   @IsOptional()
   @IsString()
@@ -26,18 +35,18 @@ export class ProjectDto {
   public createdAt: Date;
 }
 
-export class CreateProjectDto extends OmitType(ProjectDto, [
+export class CreateLayerDto extends OmitType(LayerDto, [
   'id',
   'updatedAt',
   'createdAt',
 ]) {}
-export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
+export class UpdateLayerDto extends PartialType(CreateLayerDto) {}
 
-export const PROJECT_SEARCH_WHITELIST = ['name', 'description'] as const;
+export const LAYER_SEARCH_WHITELIST = ['name', 'description'] as const;
 
-export class ProjectQueryDto extends DefaultQueryParamsDto({
+export class LayerQueryDto extends DefaultQueryParamsDto({
   sortFields: ['id', 'name', 'description', 'updatedAt', 'createdAt'],
-  searchFields: PROJECT_SEARCH_WHITELIST,
+  searchFields: LAYER_SEARCH_WHITELIST,
   defaultSortBy: 'createdAt',
 }) {
   @IsOptional()

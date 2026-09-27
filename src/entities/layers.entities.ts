@@ -3,8 +3,8 @@ import {
   CreateDateColumn,
   Entity,
   ForeignKey,
+  JoinColumn,
   ManyToOne,
-  PrimaryColumn,
   PrimaryGeneratedColumn,
   type Relation,
   UpdateDateColumn,
@@ -16,13 +16,16 @@ export class Layer {
   public id: number;
 
   @Column()
+  public projectId: number;
+
+  @Column()
   public position: number;
 
   @Column()
   public name: string;
 
-  @Column()
-  public description: string;
+  @Column({ nullable: true })
+  public description?: string;
 
   @Column({ nullable: true })
   public icon?: string;
@@ -34,5 +37,6 @@ export class Layer {
   public createdAt: Date;
 
   @ManyToOne(() => Project, (project) => project.layers)
+  @JoinColumn({ name: 'projectId' })
   project: Relation<Project>;
 }

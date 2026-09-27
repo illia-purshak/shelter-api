@@ -1,6 +1,14 @@
 import { IntersectionType, OmitType, PartialType } from '@nestjs/swagger';
 import { DefaultQueryParamsDto } from '@/common/meta/meta.js';
-import { IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  isInt,
+  IsInt,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { TransformToNumberArray } from '@/common/utils/transform-to-number-array.js';
+import { TransformToStringArray } from '@/common/utils/transform-to-string-array.js';
 
 export class LayerDto {
   @IsInt()
@@ -9,9 +17,14 @@ export class LayerDto {
   @IsString()
   public name: string;
 
+  @IsOptional()
   @IsString()
-  public description: string;
+  public description?: string;
 
+  @IsInt()
+  public position: number;
+
+  @IsOptional()
   @IsString()
   public icon?: string;
 
@@ -29,18 +42,27 @@ export class CreateLayerDto extends OmitType(LayerDto, [
 ]) {}
 export class UpdateLayerDto extends PartialType(CreateLayerDto) {}
 
-class LayerFilterDto {
+export const LAYER_SEARCH_WHITELIST = ['name', 'description'] as const;
+
+export class LayerQueryDto extends DefaultQueryParamsDto({
+  sortFields: ['id', 'name', 'description', 'updatedAt', 'createdAt'],
+  searchFields: LAYER_SEARCH_WHITELIST,
+  defaultSortBy: 'createdAt',
+}) {
   @IsOptional()
-  @IsInt()
-  public id?: number;
+  @IsInt({ each: true })
+  @TransformToNumberArray()
+  public id?: number[];
 
   @IsOptional()
-  @IsString()
-  public name?: string;
+  @IsString({ each: true })
+  @TransformToStringArray()
+  public name?: string[];
 
   @IsOptional()
-  @IsString()
-  public description?: string;
+  @IsString({ each: true })
+  @TransformToStringArray()
+  public description?: string[];
 
   @IsOptional()
   @IsDateString()
@@ -58,14 +80,3 @@ class LayerFilterDto {
   @IsDateString()
   public createdAtTo?: Date;
 }
-
-export class LayerQueryDto extends IntersectionType(
-  LayerFilterDto,
-  DefaultQueryParamsDto<LayerDto>([
-    'id',
-    'name',
-    'description',
-    'updatedAt',
-    'createdAt',
-  ]),
-) {}

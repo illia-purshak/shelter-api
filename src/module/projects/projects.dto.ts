@@ -11,8 +11,9 @@ export class ProjectDto {
   @IsString()
   public name: string;
 
+  @IsOptional()
   @IsString()
-  public description: string;
+  public description?: string;
 
   @IsOptional()
   @IsString()
@@ -31,12 +32,6 @@ export class CreateProjectDto extends OmitType(ProjectDto, [
   'createdAt',
 ]) {}
 export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
-
-export class ProjectsSearchWhitelist extends OmitType(PartialType(ProjectDto), [
-  'icon',
-  'updatedAt',
-  'createdAt',
-]) {}
 
 export const PROJECT_SEARCH_WHITELIST = ['name', 'description'] as const;
 

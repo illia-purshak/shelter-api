@@ -25,7 +25,7 @@ export class ProjectsController {
     return this.projectsService.getById(id);
   }
 
-  @Get()
+  @Get('list')
   getAll(@Query() query: ProjectQueryDto) {
     return this.projectsService.getAll(query);
   }

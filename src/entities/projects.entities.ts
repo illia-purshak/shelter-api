@@ -3,7 +3,6 @@ import {
   CreateDateColumn,
   Entity,
   OneToMany,
-  PrimaryColumn,
   PrimaryGeneratedColumn,
   Relation,
   UpdateDateColumn,
@@ -18,8 +17,8 @@ export class Project {
   @Column()
   public name: string;
 
-  @Column()
-  public description: string;
+  @Column({ nullable: true })
+  public description?: string;
 
   @Column({ nullable: true })
   public icon?: string;

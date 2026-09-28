@@ -20,26 +20,26 @@ services:
       timeout: 5s
       retries: 5
 
-  pg_admin:
-    restart: always
-    container_name: second_spin_pgadmin
-    image: dpage/pgadmin4:latest
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_LOGIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_LOGIN_PASSWORD}
-    depends_on:
-      second_spin_db:
-        condition: service_healthy
-    networks:
-      - second_spin_db
-    ports:
-      - '8083:80'
-    volumes:
-      - data_pgadmin:/var/lib/pgadmin
+  # pg_admin:
+  #   restart: always
+  #   container_name: second_spin_pgadmin
+  #   image: dpage/pgadmin4:latest
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_LOGIN_EMAIL}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_LOGIN_PASSWORD}
+  #   depends_on:
+  #     second_spin_db:
+  #       condition: service_healthy
+  #   networks:
+  #     - second_spin_db
+  #   ports:
+  #     - '8083:80'
+  #   volumes:
+  #     - data_pgadmin:/var/lib/pgadmin
 
 volumes:
   data_pg:
-  data_pgadmin:
+  # data_pgadmin:
 
 networks:
   second_spin_db:

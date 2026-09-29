@@ -5,10 +5,12 @@ import {
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, ILike, In, Repository } from 'typeorm';
 import {
+  BatchLayerDto,
   CreateLayerDto,
   LAYER_SEARCH_WHITELIST,
+  LayerDto,
   LayerQueryDto,
   UpdateLayerDto,
 } from './layers.dto.js';
@@ -25,6 +27,7 @@ export class LayersService {
     private readonly layerRepository: Repository<Layer>,
     @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
+    private dataSource: DataSource,
   ) {}
 
   async getById(id: number): Promise<Layer> {
@@ -124,13 +127,26 @@ export class LayersService {
     );
   }
 
-  async update(
-    projectId: number,
-    id: number,
-    dto: UpdateLayerDto,
-  ): Promise<Layer> {
-    const projectToAttach = await this.projectRepository.findOneBy({
-      id: projectId,
+  async update(projectId: number, dto: UpdateLayerDto[]): Promise<Layer[]> {
+    const projectToAttach = await this.projectRepository.findOne({
+      where: { id: projectId },
+      relations: { layers: true },
+    });
+
+    if (!projectToAttach)
+      throw new NotFoundException(
+        `Project with id ${projectId} not found. It's impossible to attach layer to non existing project`,
+      );
+
+    const updated = this.applyLayerUpdates(projectToAttach.layers, dto);
+
+    return await this.layerRepository.save(updated);
+  }
+
+  async batchAction(projectId: number, dto: BatchLayerDto): Promise<Layer[]> {
+    const projectToAttach = await this.projectRepository.findOne({
+      where: { id: projectId },
+      relations: { layers: true },
     });
 
     if (!projectToAttach)
@@ -138,18 +154,20 @@ export class LayersService {
         `Project with id ${projectId} not found. It's impossible to edit that is layer to non existing project`,
       );
 
-    const layer = await this.layerRepository.findOneBy({ id });
-
-    if (!layer) throw new NotFoundException(`Layer with id ${id} not found`);
-
-    if (projectToAttach.id !== layer?.projectId)
-      throw new BadRequestException(
-        `Layer with id ${id} does not exist in project with id ${projectId}`,
+    return await this.dataSource.transaction(async (manager) => {
+      const created = await this.createByBatch(
+        projectToAttach,
+        dto.create,
+        manager,
+      );
+      const updated = await this.updateByBatch(
+        projectToAttach,
+        dto.update,
+        manager,
       );
 
-    return await this.layerRepository.save(
-      this.layerRepository.merge(layer, dto),
-    );
+      return manager.save([...updated, ...created]);
+    });
   }
 
   async delete(id: number): Promise<Layer> {
@@ -159,4 +177,89 @@ export class LayersService {
 
     return await this.layerRepository.remove(layer);
   }
+
+  async createByBatch(
+    project: Project,
+    dto: CreateLayerDto[],
+    manager: EntityManager,
+  ) {
+    const allLayers = [...dto, ...project.layers];
+    const sortedByPosition = allLayers.sort((a, b) => a.position - b.position);
+    this.sortLayerPosition(allLayers);
+
+    const normalized = sortedByPosition.map((el, i) => ({
+      ...el,
+      position: i,
+      projectId: project.id,
+    }));
+
+    // TODO: uncomment when logger will be added
+    // const wasNormalized = sortedByPosition.some((el, i) => el.position !== i);
+    // if (wasNormalized) {
+    //   this.logger.warn(`Layer positions normalized`, {
+    //     original: dto.map((el) => el.position),
+    //   });
+    // }
+
+    return manager.create(Layer, normalized);
+  }
+
+  async updateByBatch(
+    project: Project,
+    dto: UpdateLayerDto[],
+    manager: EntityManager,
+  ): Promise<Layer[]> {
+    const layers = await manager.find(Layer, {
+      where: { projectId: project.id },
+    });
+
+    return this.applyLayerUpdates(layers, dto);
+  }
+
+  private applyLayerUpdates(layers: Layer[], dto: UpdateLayerDto[]): Layer[] {
+    const layersById = new Map(layers.map((el) => [el.id, el]));
+
+    const missing = dto.filter(
+      (el) => el.id === undefined || !layersById.has(el.id),
+    );
+    if (missing.length)
+      throw new NotFoundException(
+        `Layers with ids ${missing.map((el) => '#' + el.id).join(', ')} weren't found in this project`,
+      );
+
+    for (const { id, name, description, icon } of dto) {
+      const fields = Object.fromEntries(
+        Object.entries({ name, description, icon }).filter(
+          ([, value]) => value !== undefined,
+        ),
+      );
+      Object.assign(layersById.get(id!)!, fields);
+    }
+
+    const moved = dto
+      .filter((el) => el.position !== undefined)
+      .sort((a, b) => a.position! - b.position!);
+    const movedIds = new Set(moved.map((el) => el.id));
+
+    const ordered = [...layers]
+      .sort((a, b) => a.position - b.position)
+      .filter((el) => !movedIds.has(el.id));
+
+    for (const el of moved)
+      ordered.splice(Math.max(0, el.position!), 0, layersById.get(el.id!)!);
+
+    ordered.forEach((el, i) => (el.position = i));
+
+    return ordered;
+  }
+
+  sortLayerPosition = <T extends { position?: number }>(layers: T[]): T[] => {
+    const sorted = [...layers].sort(
+      (a, b) => (a?.position ?? 0) - (b?.position ?? 0),
+    );
+    return sorted.map((el, i) => ({
+      ...el,
+      position: i,
+    }));
+  };
 }

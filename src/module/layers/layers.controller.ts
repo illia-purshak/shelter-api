@@ -13,7 +13,12 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { LayersService } from './layers.service.js';
-import { CreateLayerDto, LayerQueryDto, UpdateLayerDto } from './layers.dto.js';
+import {
+  BatchLayerDto,
+  CreateLayerDto,
+  LayerQueryDto,
+  UpdateLayerDto,
+} from './layers.dto.js';
 import {
   CreateLayersApiDocs,
   DeleteLayersApiDocs,
@@ -34,12 +39,6 @@ export class LayersController {
     return this.layersService.getAll(query);
   }
 
-  @GetByIdLayersApiDocs()
-  @Get(':id')
-  getById(@Param('id', ParseIntPipe) id: number) {
-    return this.layersService.getById(id);
-  }
-
   // @Get('list/:projectId')
   // getAllInProject(
   //   @Param('projectId', ParseIntPipe) projectId: number,
@@ -48,8 +47,14 @@ export class LayersController {
   //   return this.layersService.getAllInProject(projectId, query);
   // }
 
+  @GetByIdLayersApiDocs()
+  @Get(':id')
+  getById(@Param('id', ParseIntPipe) id: number) {
+    return this.layersService.getById(id);
+  }
+
   @CreateLayersApiDocs()
-  @Post(':projectId')
+  @Post()
   create(
     @Param('projectId', ParseIntPipe) projectId: number,
     @Body(
@@ -64,14 +69,21 @@ export class LayersController {
     return this.layersService.create(projectId, dto);
   }
 
+  @Post('/batch/:projectId')
+  async updateBatch(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Body() dto: BatchLayerDto,
+  ) {
+    return await this.layersService.batchAction(projectId, dto);
+  }
+
   @UpdateLayersApiDocs()
-  @Patch(':projectId/:id')
+  @Patch(':projectId')
   async update(
     @Param('projectId', ParseIntPipe) projectId: number,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateLayerDto,
+    @Body() dto: UpdateLayerDto[],
   ) {
-    return await this.layersService.update(projectId, id, dto);
+    return await this.layersService.update(projectId, dto);
   }
 
   @DeleteLayersApiDocs()

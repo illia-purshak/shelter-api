@@ -1,14 +1,13 @@
 import {
   ApiProperty,
   ApiPropertyOptional,
-  IntersectionType,
   OmitType,
   PartialType,
 } from '@nestjs/swagger';
 import { DefaultQueryParamsDto } from '@/common/meta/meta.js';
 import {
+  IsArray,
   IsDateString,
-  isInt,
   IsInt,
   IsOptional,
   IsString,
@@ -20,6 +19,10 @@ export class LayerDto {
   @ApiProperty({ type: Number, example: 1 })
   @IsInt()
   public id: number;
+
+  @ApiProperty({ type: Number, example: 1 })
+  @IsInt()
+  public projectId: number;
 
   @ApiProperty({ type: String, example: 'Ground floor' })
   @IsString()
@@ -73,7 +76,17 @@ export class CreateLayerDto extends OmitType(LayerDto, [
   'updatedAt',
   'createdAt',
 ]) {}
-export class UpdateLayerDto extends PartialType(CreateLayerDto) {}
+export class UpdateLayerDto extends PartialType(
+  OmitType(LayerDto, ['updatedAt', 'createdAt']),
+) {}
+
+export class BatchLayerDto {
+  @IsArray()
+  create: CreateLayerDto[];
+
+  @IsArray()
+  update: UpdateLayerDto[];
+}
 
 export const LAYER_SEARCH_WHITELIST = ['name', 'description'] as const;
 
